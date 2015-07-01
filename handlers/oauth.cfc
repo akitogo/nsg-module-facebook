@@ -2,7 +2,7 @@ component {
 
 	function preHandler(event,rc,prc){
 		prc.facebookCredentials = getSetting('facebook')['oauth'];
-		prc.facebookSettings = getModuleSettings('nsg-module-facebook')['oauth'];
+		prc.facebookSettings = getModuleSettings('nsg-module-facebook')['settings']['oauth'];
 		if(!structKeyExists(session,'facebookOAuth')){
 			session['facebookOAuth'] = structNew();
 		}
@@ -28,7 +28,7 @@ component {
 
 			announceInterception( state='facebookLoginSuccess', interceptData=results );
 			announceInterception( state='loginSuccess', interceptData=results );
-			setNextEvent(view=prc.facebookCredentials['loginSuccess'],ssl=( cgi.server_port == 443 ? true : false ));
+			setNextEvent(event=prc.facebookCredentials['loginSuccess'],ssl=( cgi.server_port == 443 ? true : false ));
 
 		}else if( event.valueExists('code') ){
 			session['facebookOAuth']['code'] = event.getValue('code');
@@ -37,7 +37,7 @@ component {
 				httpService.setURL('#prc.facebookSettings['tokenRequestURL']#?client_id=#prc.facebookCredentials['appID']#&redirect_uri=#urlEncodedFormat(prc.facebookCredentials['redirectURL'])#&client_secret=#prc.facebookCredentials['appSecret']#&code=#session['facebookOAuth']['code']#');
 			var results = httpService.send().getPrefix();
 
-			if( results['status_code'] == 200 ){
+			if( results.Responseheader['status_code'] eq 200 ){
 				var myFields = listToArray(results['fileContent'],'&');
 
 				for(var i=1;i<=arrayLen(myFields);i++){
@@ -45,8 +45,7 @@ component {
 						session['facebookOAuth'][listFirst(myFields[i],'=')] = listLast(myFields[i],'=');
 					}
 				}
-
-				setNextEvent('facebook/oauth/activateUser')
+				setNextEvent('facebook/oauth/activateUser');
 			}else{
 				announceInterception( state='facebookLoginFailure', interceptData=results );
 				announceInterception( state='loginFailure', interceptData=results );
